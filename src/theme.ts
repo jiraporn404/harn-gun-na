@@ -17,7 +17,7 @@ export const theme = createTheme({
       light: "#ecf87f",
     },
     text: {
-      primary: "#4F4F4F",
+      primary: "#363636",
       secondary: "#82868B",
       disabled: "#828282",
     },

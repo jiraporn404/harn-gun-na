@@ -390,7 +390,14 @@ function RouteComponent() {
                 ))}
               </Select>
             </FormControl>
-            <Button type="submit" variant="contained" color="primary">
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{
+                color: "white",
+              }}
+            >
               เพิ่มรายการ
             </Button>
           </Stack>
@@ -417,7 +424,7 @@ function RouteComponent() {
               color: "error.main",
               fontSize: 24,
               fontWeight: 600,
-              bgcolor: "primary.light",
+              bgcolor: "grey.200",
               p: 0.5,
               borderRadius: 1,
             }}
@@ -429,29 +436,28 @@ function RouteComponent() {
           {expenses.map((expense) => (
             <ListItem
               key={expense.id}
-              secondaryAction={
-                <IconButton
-                  onClick={() => {
-                    setDeleteExpenseId(expense.id);
-                    setDeleteDialogType("expense");
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <DeleteIcon fontSize="small" color="error" />
-                </IconButton>
-              }
+              sx={{ border: 1, borderColor: "divider", borderRadius: 2, mb: 1 }}
             >
               <Box sx={{ width: "100%" }}>
-                <Stack direction={"row"}>
-                  <Typography>{expense.name}</Typography>
-                  <Chip
-                    label={`฿ ${expense.totalAmount.toFixed(2)}`}
-                    size="small"
-                    sx={{
-                      bgcolor: "secondary.light",
-                      color: "error.main",
+                <Stack direction={"row"} justifyContent={"space-between"}>
+                  <Stack direction={"row"}>
+                    <Typography>{expense.name}</Typography>
+                    <Chip
+                      label={`฿ ${expense.totalAmount.toFixed(2)}`}
+                      size="small"
+                      color="error"
+                      variant="outlined"
+                    />
+                  </Stack>
+                  <IconButton
+                    onClick={() => {
+                      setDeleteExpenseId(expense.id);
+                      setDeleteDialogType("expense");
+                      setDeleteDialogOpen(true);
                     }}
-                  />
+                  >
+                    <DeleteIcon fontSize="small" color="error" />
+                  </IconButton>
                 </Stack>
                 <ListItemText
                   // primary={expense.name}
@@ -488,14 +494,6 @@ function RouteComponent() {
                                 gap: 1,
                               }}
                             >
-                              <Box
-                                sx={{
-                                  width: 16,
-                                  height: 16,
-                                  borderRadius: "50%",
-                                  backgroundColor: payer?.color,
-                                }}
-                              />
                               {payer?.name} จ่าย ฿ {payment.amount.toFixed(2)}
                             </Box>
                           );
@@ -552,20 +550,10 @@ function RouteComponent() {
                   }}
                 >
                   <Stack direction={"row"} alignItems={"center"}>
-                    <Box
-                      sx={{
-                        border: 1,
-                        borderColor: "error.main",
-                        borderRadius: 1,
-                        p: 0.5,
-                        minWidth: 100,
-                        textAlign: "center",
-                      }}
-                    >
-                      <Typography fontSize={14} fontWeight={600}>
-                        ฿ {transaction.amount.toFixed(2)}
-                      </Typography>
-                    </Box>{" "}
+                    <Chip
+                      label={` ฿ ${transaction.amount.toFixed(2)}`}
+                      color="error"
+                    />
                     <Chip
                       label={`${fromPerson?.name}`}
                       sx={{
@@ -573,7 +561,7 @@ function RouteComponent() {
                         fontSize: 16,
                       }}
                     />
-                    <Typography>ต้องชำระให้</Typography>
+                    <Typography fontSize={14}>ต้องชำระให้</Typography>
                     <Chip
                       label={`${toPerson?.name}`}
                       sx={{
@@ -618,9 +606,9 @@ function RouteComponent() {
               <Typography>{person.name}</Typography>
               <Typography
                 fontSize={16}
-                fontWeight={300}
+                fontWeight={500}
                 color={
-                  balances[person.id].toFixed(2) === "0.00"
+                  balances[person.id] === 0
                     ? "inherit"
                     : balances[person.id] > 0
                       ? "success"
@@ -639,8 +627,12 @@ function RouteComponent() {
           variant="outlined"
           color="error"
           onClick={() => {
-            setDeleteDialogType("people");
-            setDeleteDialogOpen(true);
+            if (expenses.length > 0) {
+              setDeleteSnackbarOpen(true);
+            } else {
+              setDeleteDialogType("people");
+              setDeleteDialogOpen(true);
+            }
           }}
           sx={{ width: "fit-content" }}
         >
@@ -673,9 +665,7 @@ function RouteComponent() {
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
           <Alert severity="error" onClose={handleCloseSnackbar}>
-            <AlertTitle>
-              คนนี้มีรายการชำระเงิน กรุณาลบรายการชำระเงินก่อน
-            </AlertTitle>
+            <AlertTitle>มีรายการชำระเงิน กรุณาลบรายการชำระเงินก่อน</AlertTitle>
           </Alert>
         </Snackbar>
       )}
