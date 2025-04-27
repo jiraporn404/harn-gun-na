@@ -159,16 +159,15 @@ function RouteComponent() {
 
   return (
     <Stack
-      spacing={3}
+      spacing={2}
       sx={{
-        py: 3,
+        py: 2,
         minWidth: { xs: "100%", sm: "60vw", md: "60vw" },
       }}
     >
-      <Typography variant="h3" align="center">
+      <Typography align="center" fontSize={24} fontWeight={600}>
         Harn Gun Na
       </Typography>
-
       <Paper sx={{ p: 2 }}>
         <form onSubmit={handleAddPerson}>
           <Stack direction={isSmallScreen ? "column" : "row"}>
@@ -228,7 +227,6 @@ function RouteComponent() {
           </Stack>
         </form>
       </Paper>
-
       <Paper sx={{ p: 2 }}>
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
@@ -405,7 +403,14 @@ function RouteComponent() {
           justifyContent={"space-between"}
           alignItems={"center"}
         >
-          <Typography variant="h6">ค่าใช้จ่ายรวม (Total Expense)</Typography>
+          <Typography
+            fontSize={18}
+            fontWeight={500}
+            gutterBottom
+            sx={{ flex: 1 }}
+          >
+            ค่าใช้จ่ายรวม
+          </Typography>
           <Typography
             variant="h6"
             sx={{
@@ -526,10 +531,67 @@ function RouteComponent() {
           ))}
         </List>
       </Paper>
+      {/* Who Owes Whom */}
+      <Paper sx={{ p: 2 }}>
+        <Typography fontSize={18} fontWeight={500} gutterBottom>
+          สรุปการชำระเงิน
+        </Typography>
+        <List>
+          {transactions.map((transaction, index) => {
+            const fromPerson = people.find((p) => p.id === transaction.from);
+            const toPerson = people.find((p) => p.id === transaction.to);
+            return (
+              <>
+                <Box
+                  key={index}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    mb: 1,
+                    width: "100%",
+                  }}
+                >
+                  <Stack direction={"row"} alignItems={"center"}>
+                    <Box
+                      sx={{
+                        border: 1,
+                        borderColor: "error.main",
+                        borderRadius: 1,
+                        p: 0.5,
+                        minWidth: 100,
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography fontSize={14} fontWeight={600}>
+                        ฿ {transaction.amount.toFixed(2)}
+                      </Typography>
+                    </Box>{" "}
+                    <Chip
+                      label={`${fromPerson?.name}`}
+                      sx={{
+                        bgcolor: fromPerson?.color,
+                        fontSize: 16,
+                      }}
+                    />
+                    <Typography>ต้องชำระให้</Typography>
+                    <Chip
+                      label={`${toPerson?.name}`}
+                      sx={{
+                        bgcolor: toPerson?.color,
+                        fontSize: 16,
+                      }}
+                    />
+                  </Stack>
+                </Box>
+              </>
+            );
+          })}
+        </List>
+      </Paper>{" "}
       {/* Balances */}
       <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          เงินคงค้าง (Balance)
+        <Typography fontSize={18} fontWeight={500} gutterBottom>
+          เงินคงค้าง
         </Typography>
         <Box display={"grid"} gridTemplateColumns={"repeat(3, 1fr)"} gap={1}>
           {people.map((person) => (
@@ -570,63 +632,6 @@ function RouteComponent() {
             </Box>
           ))}
         </Box>
-      </Paper>
-      {/* Who Owes Whom */}
-      <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          คนที่ต้องชำระให้กับคนอื่น (Who owes whom)
-        </Typography>
-        <List>
-          {transactions.map((transaction, index) => {
-            const fromPerson = people.find((p) => p.id === transaction.from);
-            const toPerson = people.find((p) => p.id === transaction.to);
-            return (
-              <>
-                <Box
-                  key={index}
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 1,
-                    width: "100%",
-                  }}
-                >
-                  <Stack direction={"row"} alignItems={"center"}>
-                    <Box
-                      sx={{
-                        border: 1,
-                        borderColor: "error.main",
-                        borderRadius: 1,
-                        p: 0.5,
-                        minWidth: 100,
-                        textAlign: "center",
-                      }}
-                    >
-                      <Typography fontSize={14} fontWeight={600}>
-                        ฿ {transaction.amount.toFixed(2)}
-                      </Typography>
-                    </Box>{" "}
-                    <Chip
-                      label={`${fromPerson?.name}`}
-                      sx={{
-                        bgcolor: fromPerson?.color,
-                        fontSize: 16,
-                      }}
-                    />
-                    <Typography>ต้องชำระให้</Typography>
-                    <Chip
-                      label={`${toPerson?.name}`}
-                      sx={{
-                        bgcolor: toPerson?.color,
-                        fontSize: 16,
-                      }}
-                    />
-                  </Stack>
-                </Box>
-              </>
-            );
-          })}
-        </List>
       </Paper>
       {/* Clear data */}
       <Stack direction={"row"} justifyContent={"flex-end"}>

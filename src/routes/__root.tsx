@@ -10,10 +10,12 @@ export const Route = createRootRoute({
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        width: "100vw",
+        minWidth: "100vw",
       }}
     >
-      <Outlet />
+      <Box sx={{ p: 2, width: "-webkit-fill-available" }}>
+        <Outlet />
+      </Box>
     </Box>
   ),
 });

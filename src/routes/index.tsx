@@ -9,7 +9,7 @@ function Homepage() {
   const navigate = useNavigate();
 
   return (
-    <Stack>
+    <Stack p={2}>
       <Typography variant="h3" align="center">
         Harn Gun Na
       </Typography>
@@ -17,7 +17,6 @@ function Homepage() {
         Easily track shared expenses and settle up with friends. Log who paid,
         split costs fairly, and see who owes what — all in one simple app.
       </Typography>
-      Display theme color
       <Stack direction={"row"} justifyContent={"center"} spacing={2}>
         <Box
           bgcolor={"primary.main"}
@@ -68,11 +67,11 @@ function Homepage() {
           borderRadius={"50%"}
         />
       </Stack>
-      <br />
       <Button
         variant="contained"
         color="primary"
         onClick={() => navigate({ to: "/harngunna" })}
+        sx={{ color: "white" }}
       >
         Let's get started
       </Button>
