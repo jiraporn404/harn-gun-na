@@ -51,7 +51,7 @@ function RouteComponent() {
     clearPeopleData,
     clearExpensesData,
   } = useExpenses();
-  const [description, setDescription] = useState("");
+  const [expenseName, setExpenseName] = useState("");
   const [newPersonName, setNewPersonName] = useState("");
   const [sharedWith, setSharedWith] = useState<string[]>([]);
   const [payments, setPayments] = useState<PaymentInput[]>([
@@ -94,7 +94,7 @@ function RouteComponent() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description || payments.length === 0 || sharedWith.length === 0)
+    if (!expenseName || payments.length === 0 || sharedWith.length === 0)
       return;
 
     if (payments.some((p) => !p.payerId || !p.amount)) return;
@@ -105,7 +105,7 @@ function RouteComponent() {
     );
 
     addExpense({
-      description,
+      name: expenseName,
       totalAmount,
       date: new Date().toISOString(),
       payments: payments.map((p) => ({
@@ -115,7 +115,7 @@ function RouteComponent() {
       sharedWith,
     });
 
-    setDescription("");
+    setExpenseName("");
     setPayments([{ payerId: "", amount: "" }]);
     setSharedWith([]);
     setIsSharedAll(false);
@@ -234,8 +234,8 @@ function RouteComponent() {
           <Stack spacing={2}>
             <TextField
               label="รายการ"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={expenseName}
+              onChange={(e) => setExpenseName(e.target.value)}
               fullWidth
               required
             />
@@ -436,15 +436,21 @@ function RouteComponent() {
                 </IconButton>
               }
             >
-              <ListItemText
-                primary={expense.description}
-                secondary={
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      ราคารวม: ฿ {expense.totalAmount.toFixed(2)}
-                    </Box>
+              <Box sx={{ width: "100%" }}>
+                <Stack direction={"row"}>
+                  <Typography>{expense.name}</Typography>
+                  <Chip
+                    label={`฿ ${expense.totalAmount.toFixed(2)}`}
+                    size="small"
+                    sx={{
+                      bgcolor: "secondary.light",
+                      color: "error.main",
+                    }}
+                  />
+                </Stack>
+                <ListItemText
+                  // primary={expense.name}
+                  secondary={
                     <Box
                       sx={{
                         display: "flex",
@@ -452,55 +458,70 @@ function RouteComponent() {
                         gap: 0.5,
                       }}
                     >
-                      {expense.payments.map((payment, index) => {
-                        const payer = people.find(
-                          (p) => p.id === payment.payerId
-                        );
-                        return (
-                          <Box
-                            key={index}
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
+                      {/* <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        ราคารวม: ฿ {expense.totalAmount.toFixed(2)}
+                      </Box> */}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0.5,
+                        }}
+                      >
+                        {expense.payments.map((payment, index) => {
+                          const payer = people.find(
+                            (p) => p.id === payment.payerId
+                          );
+                          return (
                             <Box
+                              key={index}
                               sx={{
-                                width: 16,
-                                height: 16,
-                                borderRadius: "50%",
-                                backgroundColor: payer?.color,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: "50%",
+                                  backgroundColor: payer?.color,
+                                }}
+                              />
+                              {payer?.name} จ่าย ฿ {payment.amount.toFixed(2)}
+                            </Box>
+                          );
+                        })}
+                      </Box>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        แบ่งกับ:{" "}
+                        {expense.sharedWith.map((id) => {
+                          const person = people.find((p) => p.id === id);
+                          return (
+                            <Chip
+                              key={id}
+                              label={person?.name}
+                              size="small"
+                              sx={{
+                                backgroundColor: person?.color,
+                                "&:hover": {
+                                  backgroundColor: person?.color,
+                                  opacity: 0.8,
+                                },
                               }}
                             />
-                            {payer?.name} paid ฿ {payment.amount.toFixed(2)}
-                          </Box>
-                        );
-                      })}
+                          );
+                        })}
+                      </Box>
                     </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      Shared with:{" "}
-                      {expense.sharedWith.map((id) => {
-                        const person = people.find((p) => p.id === id);
-                        return (
-                          <Chip
-                            key={id}
-                            label={person?.name}
-                            size="small"
-                            sx={{
-                              backgroundColor: person?.color,
-                              "&:hover": {
-                                backgroundColor: person?.color,
-                                opacity: 0.8,
-                              },
-                            }}
-                          />
-                        );
-                      })}
-                    </Box>
-                  </Box>
-                }
-              />
+                  }
+                />
+              </Box>
             </ListItem>
           ))}
         </List>
@@ -565,31 +586,42 @@ function RouteComponent() {
                   key={index}
                   sx={{
                     display: "flex",
-                    alignItems: "center",
+                    flexDirection: "column",
                     gap: 1,
                     width: "100%",
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      backgroundColor: fromPerson?.color,
-                    }}
-                  />
-                  <ListItemText
-                    primary={`${fromPerson?.name} owes ${toPerson?.name}`}
-                    secondary={`Amount: ฿ ${transaction.amount.toFixed(2)}`}
-                  />
-                  <Box
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      backgroundColor: toPerson?.color,
-                    }}
-                  />
+                  <Stack direction={"row"} alignItems={"center"}>
+                    <Box
+                      sx={{
+                        border: 1,
+                        borderColor: "error.main",
+                        borderRadius: 1,
+                        p: 0.5,
+                        minWidth: 100,
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography fontSize={14} fontWeight={600}>
+                        ฿ {transaction.amount.toFixed(2)}
+                      </Typography>
+                    </Box>{" "}
+                    <Chip
+                      label={`${fromPerson?.name}`}
+                      sx={{
+                        bgcolor: fromPerson?.color,
+                        fontSize: 16,
+                      }}
+                    />
+                    <Typography>ต้องชำระให้</Typography>
+                    <Chip
+                      label={`${toPerson?.name}`}
+                      sx={{
+                        bgcolor: toPerson?.color,
+                        fontSize: 16,
+                      }}
+                    />
+                  </Stack>
                 </Box>
               </>
             );

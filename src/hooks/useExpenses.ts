@@ -13,7 +13,7 @@ interface Payment {
 
 interface Expense {
   id: string;
-  description: string;
+  name: string;
   totalAmount: number;
   date: string;
   payments: Payment[];
