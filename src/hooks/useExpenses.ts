@@ -11,7 +11,7 @@ interface Payment {
   amount: number;
 }
 
-interface Expense {
+export interface Expense {
   id: string;
   name: string;
   totalAmount: number;
@@ -65,6 +65,14 @@ export function useExpenses() {
 
   const deleteExpense = (id: string) => {
     setExpenses((prev) => prev.filter((expense) => expense.id !== id));
+  };
+
+  const editExpense = (id: string, updatedExpense: Omit<Expense, "id">) => {
+    setExpenses((prev) =>
+      prev.map((expense) =>
+        expense.id === id ? { ...updatedExpense, id } : expense
+      )
+    );
   };
 
   const calculateSharedExpenses = () => {
@@ -149,6 +157,7 @@ export function useExpenses() {
     calculateSharedExpenses,
     calculateTransactions,
     deleteExpense,
+    editExpense,
     clearPeopleData,
     clearExpensesData,
   };

@@ -9,7 +9,21 @@ function Homepage() {
   const navigate = useNavigate();
 
   return (
-    <Stack p={2}>
+    <Stack
+      p={2}
+      height={"100%"}
+      width={"100%"}
+      maxWidth={"800px"}
+      alignItems={"center"}
+      justifyContent={"center"}
+      spacing={3}
+      sx={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+      }}
+    >
       <Typography variant="h3" align="center">
         Harn Gun Na
       </Typography>
