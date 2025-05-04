@@ -22,6 +22,7 @@ import {
   AlertTitle,
   Alert,
   Tooltip,
+  Switch,
 } from "@mui/material";
 import { Expense, useExpenses } from "../hooks/useExpenses";
 import { useState, useRef } from "react";
@@ -76,7 +77,7 @@ function RouteComponent() {
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [saveSnackbarOpen, setSaveSnackbarOpen] = useState(false);
   const [deleteSnackbarOpen, setDeleteSnackbarOpen] = useState(false);
-
+  const [isAddPayer, setIsAddPayer] = useState(false);
   const handleAddPerson = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPersonName) return;
@@ -290,7 +291,10 @@ function RouteComponent() {
       </Typography>
       <Paper sx={{ p: 2 }}>
         <form onSubmit={handleAddPerson}>
-          <Stack direction={isSmallScreen ? "column" : "row"}>
+          <Stack
+            display={isAddPayer ? "flex" : "none"}
+            direction={isSmallScreen ? "column" : "row"}
+          >
             <TextField
               label="เพิ่มคน"
               value={newPersonName}
@@ -308,6 +312,15 @@ function RouteComponent() {
               เพิ่ม
             </Button>
           </Stack>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isAddPayer}
+                onChange={() => setIsAddPayer(!isAddPayer)}
+              />
+            }
+            label="เพิ่มคนที่ชำระเงิน"
+          />
           <Stack
             direction="row"
             spacing={1}
