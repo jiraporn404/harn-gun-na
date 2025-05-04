@@ -36,7 +36,7 @@ export const Route = createRootRoute({
           px: 2,
         }}
       >
-        <Typography variant="caption" align="center">
+        <Typography fontSize={10} align="center" color="text.secondary">
           Copyright 2025 Harn Gun Na. All rights reserved. | v{version} |
           Developed by{" "}
           <a href="https://github.com/jiraporn404" target="_blank">

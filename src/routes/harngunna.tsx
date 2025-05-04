@@ -575,7 +575,11 @@ function RouteComponent() {
               borderRadius: 1,
             }}
           >
-            💰 {totalExpenses.toFixed(2)}
+            💰{" "}
+            {totalExpenses.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </Typography>{" "}
           <Tooltip title="บันทึกเป็นรูปภาพ">
             <IconButton
@@ -613,7 +617,13 @@ function RouteComponent() {
                   <Stack direction={"row"}>
                     <Typography component={"span"}>{expense.name}</Typography>
                     <Chip
-                      label={`฿ ${expense.totalAmount.toFixed(2)}`}
+                      label={`฿ ${expense.totalAmount.toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}`}
                       size="small"
                       color="error"
                       variant="outlined"
@@ -661,7 +671,13 @@ function RouteComponent() {
                       return (
                         <Chip
                           key={payment.payerId}
-                          label={`${payer?.name} ฿ ${payment.amount.toFixed(2)}`}
+                          label={`${payer?.name} ฿ ${payment.amount.toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}`}
                           size="small"
                           variant="outlined"
                           sx={{
@@ -748,7 +764,10 @@ function RouteComponent() {
               >
                 <Stack direction={"row"} alignItems={"center"}>
                   <Chip
-                    label={` ฿ ${transaction.amount.toFixed(2)}`}
+                    label={` ฿ ${transaction.amount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`}
                     color="error"
                   />
                   <Chip
@@ -806,7 +825,6 @@ function RouteComponent() {
             <Box
               key={person.id}
               sx={{
-                alignItems: "center",
                 border: 2,
                 borderColor: person.color,
                 borderRadius: 2,
@@ -815,6 +833,7 @@ function RouteComponent() {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
+                alignItems: "center",
               }}
             >
               <Typography component={"span"}>{person.name}</Typography>
@@ -830,7 +849,11 @@ function RouteComponent() {
                       : "error"
                 }
               >
-                ฿ {balances[person.id].toFixed(2)}
+                ฿{" "}
+                {balances[person.id].toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </Typography>
             </Box>
           ))}
