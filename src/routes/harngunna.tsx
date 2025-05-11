@@ -23,6 +23,7 @@ import {
   Alert,
   Tooltip,
   Switch,
+  Divider,
 } from "@mui/material";
 import { Expense, useExpenses } from "../hooks/useExpenses";
 import { useState, useRef } from "react";
@@ -287,7 +288,7 @@ function RouteComponent() {
         fontSize={24}
         fontWeight={600}
       >
-        Harn Gun Na
+        💰 Harn Gun Na 💰
       </Typography>
       <Paper sx={{ p: 2 }}>
         <form onSubmit={handleAddPerson}>
@@ -381,12 +382,12 @@ function RouteComponent() {
             />
 
             <Typography component={"span"} variant="subtitle1">
-              ชำระเงิน
+              ชำระเงิน {payments.length > 0 ? `(${payments.length} คน)` : ""}
             </Typography>
             {payments.map((payment, index) => (
               <Stack
                 key={index}
-                direction={isSmallScreen ? "column" : "row"}
+                // direction={isSmallScreen ? "column" : "row"}
                 alignItems="center"
                 width={1}
               >
@@ -433,25 +434,34 @@ function RouteComponent() {
                     ))}
                   </Select>
                 </FormControl>
-                <TextField
-                  label="จำนวน"
-                  type="number"
-                  value={payment.amount}
-                  onChange={(e) =>
-                    handlePaymentChange(index, "amount", e.target.value)
-                  }
-                  required
-                  sx={{ width: isSmallScreen ? "100%" : "150px" }}
-                  disabled={people.length === 0 || payment.payerId === ""}
-                />
-                {payments.length > 1 && (
-                  <IconButton
-                    onClick={() => handleRemovePayment(index)}
-                    color="error"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                )}
+                <Stack
+                  direction={"row"}
+                  alignItems={"center"}
+                  justifyContent={"space-between"}
+                  width={1}
+                >
+                  <TextField
+                    label="จำนวน"
+                    type="number"
+                    value={payment.amount}
+                    onChange={(e) =>
+                      handlePaymentChange(index, "amount", e.target.value)
+                    }
+                    required
+                    // sx={{ width: isSmallScreen ? "100%" : "150px" }}
+                    disabled={people.length === 0 || payment.payerId === ""}
+                    fullWidth
+                  />
+                  {payments.length > 1 && (
+                    <IconButton
+                      onClick={() => handleRemovePayment(index)}
+                      color="error"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  )}
+                </Stack>
+                {index < payments.length - 1 && <Divider sx={{ width: 1 }} />}
               </Stack>
             ))}
             <Button
@@ -459,6 +469,8 @@ function RouteComponent() {
               variant="outlined"
               onClick={handleAddPayment}
               sx={{ alignSelf: "flex-start" }}
+              color="success"
+              startIcon={"💰"}
             >
               เพิ่มชำระเงิน
             </Button>
@@ -588,7 +600,6 @@ function RouteComponent() {
               borderRadius: 1,
             }}
           >
-            💰{" "}
             {totalExpenses.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
@@ -597,7 +608,7 @@ function RouteComponent() {
           <Tooltip title="บันทึกเป็นรูปภาพ">
             <IconButton
               onClick={handleSaveExpenseImage}
-              color="primary"
+              color="inherit"
               sx={{
                 opacity: 0.7,
                 "&:hover": {
@@ -606,7 +617,7 @@ function RouteComponent() {
               }}
               data-html2canvas-ignore="true"
             >
-              <SaveAltIcon />
+              <SaveAltIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         </Stack>
@@ -748,7 +759,7 @@ function RouteComponent() {
           <Tooltip title="บันทึกเป็นรูปภาพ">
             <IconButton
               onClick={handleSaveTransactionImage}
-              color="primary"
+              color="inherit"
               sx={{
                 opacity: 0.7,
                 "&:hover": {
@@ -757,7 +768,7 @@ function RouteComponent() {
               }}
               data-html2canvas-ignore="true"
             >
-              <SaveAltIcon />
+              <SaveAltIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         </Stack>
@@ -820,7 +831,7 @@ function RouteComponent() {
           <Tooltip title="บันทึกเป็นรูปภาพ">
             <IconButton
               onClick={handleSaveBalanceImage}
-              color="primary"
+              color="inherit"
               sx={{
                 opacity: 0.7,
                 "&:hover": {
@@ -829,7 +840,7 @@ function RouteComponent() {
               }}
               data-html2canvas-ignore="true"
             >
-              <SaveAltIcon />
+              <SaveAltIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         </Stack>
