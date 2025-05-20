@@ -1,5 +1,4 @@
 import { useGroups } from "./useGroups";
-import { useLocalStorage } from "./useLocalStorage";
 
 export interface Person {
   id: string;
