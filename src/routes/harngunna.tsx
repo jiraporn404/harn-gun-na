@@ -297,7 +297,6 @@ function RouteComponent() {
       spacing={2}
       sx={{
         py: 2,
-        width: "100%",
         minWidth: { xs: "100%", sm: "80vw", md: "80vw" },
       }}
     >
