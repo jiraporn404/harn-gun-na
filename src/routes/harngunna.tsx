@@ -32,9 +32,20 @@ import EditIcon from "@mui/icons-material/Edit";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import html2canvas from "html2canvas";
 import { DeleteDialog } from "../dialog/deleteDialog";
+import { useGroups } from "../hooks/useGroups";
+import HomeIcon from "@mui/icons-material/Home";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/harngunna")({
   component: RouteComponent,
+  validateSearch: (search) => {
+    if (typeof search.groupId !== "string") {
+      throw new Error("Missing or invalid groupId in search params");
+    }
+    return {
+      groupId: search.groupId,
+    };
+  },
 });
 
 interface PaymentInput {
@@ -57,6 +68,9 @@ function RouteComponent() {
     clearPeopleData,
     clearExpensesData,
   } = useExpenses();
+  const { groupId } = Route.useSearch();
+  const { deleteGroup, currentGroup } = useGroups();
+  const navigate = useNavigate();
   const balanceCardsRef = useRef<HTMLDivElement>(null);
   const transactionsRef = useRef<HTMLDivElement>(null);
   const expensesRef = useRef<HTMLDivElement>(null);
@@ -79,6 +93,7 @@ function RouteComponent() {
   const [saveSnackbarOpen, setSaveSnackbarOpen] = useState(false);
   const [deleteSnackbarOpen, setDeleteSnackbarOpen] = useState(false);
   const [isAddPayer, setIsAddPayer] = useState(false);
+
   const handleAddPerson = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPersonName) return;
@@ -274,12 +289,16 @@ function RouteComponent() {
     setSaveSnackbarOpen(false);
   };
 
+  console.log(people);
+  console.log(currentGroup);
+
   return (
     <Stack
       spacing={2}
       sx={{
         py: 2,
-        minWidth: { xs: "100%", sm: "60vw", md: "60vw" },
+        width: "100%",
+        minWidth: { xs: "100%", sm: "80vw", md: "80vw" },
       }}
     >
       <Typography
@@ -288,7 +307,7 @@ function RouteComponent() {
         fontSize={24}
         fontWeight={600}
       >
-        💰 Harn Gun Na 💰
+        💰 {currentGroup?.name} 💰
       </Typography>
       <Paper sx={{ p: 2 }}>
         <form onSubmit={handleAddPerson}>
@@ -884,34 +903,57 @@ function RouteComponent() {
         </Box>
       </Paper>
       {/* Clear data */}
-      <Stack direction={"row"} justifyContent={"flex-end"}>
+      <Stack direction={"row"} justifyContent={"space-between"} width={1}>
         <Button
-          variant="outlined"
-          color="error"
+          variant="contained"
+          color="info"
           onClick={() => {
-            if (expenses.length > 0) {
-              setDeleteSnackbarOpen(true);
-            } else {
-              setDeleteDialogType("people");
+            navigate({ to: "/" });
+          }}
+          sx={{ width: "fit-content", color: "white" }}
+        >
+          <HomeIcon fontSize="small" /> Home
+        </Button>
+        <Stack direction={"row"} alignSelf={"flex-end"}>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => {
+              deleteGroup(groupId);
+              navigate({ to: "/" });
+            }}
+          >
+            <DeleteIcon fontSize="small" /> ข้อมูลกลุ่ม
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => {
+              if (expenses.length > 0) {
+                setDeleteSnackbarOpen(true);
+              } else {
+                setDeleteDialogType("people");
+                setDeleteDialogOpen(true);
+              }
+            }}
+            sx={{ width: "fit-content" }}
+          >
+            <DeleteIcon fontSize="small" /> ข้อมูลคน
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => {
+              setDeleteDialogType("expenses");
               setDeleteDialogOpen(true);
-            }
-          }}
-          sx={{ width: "fit-content" }}
-        >
-          <DeleteIcon fontSize="small" /> ล้างข้อมูลคน
-        </Button>
-        <Button
-          variant="outlined"
-          color="error"
-          onClick={() => {
-            setDeleteDialogType("expenses");
-            setDeleteDialogOpen(true);
-          }}
-          sx={{ width: "fit-content" }}
-        >
-          <DeleteIcon fontSize="small" /> ล้างข้อมูลรายการ
-        </Button>
+            }}
+            sx={{ width: "fit-content" }}
+          >
+            <DeleteIcon fontSize="small" /> ข้อมูลรายการ
+          </Button>
+        </Stack>
       </Stack>
+
       {deleteDialogOpen && (
         <DeleteDialog
           open={deleteDialogOpen}

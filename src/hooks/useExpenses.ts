@@ -1,6 +1,7 @@
+import { useGroups } from "./useGroups";
 import { useLocalStorage } from "./useLocalStorage";
 
-interface Person {
+export interface Person {
   id: string;
   name: string;
   color: string;
@@ -26,7 +27,7 @@ interface Transaction {
   amount: number;
 }
 
-const generatePastelColor = () => {
+export const generatePastelColor = () => {
   const hue = Math.floor(Math.random() * 360);
   const saturation = 60 + Math.random() * 20;
   const lightness = 75 + Math.random() * 15;
@@ -34,8 +35,13 @@ const generatePastelColor = () => {
 };
 
 export function useExpenses() {
-  const [expenses, setExpenses] = useLocalStorage<Expense[]>("expenses", []);
-  const [people, setPeople] = useLocalStorage<Person[]>("people", []);
+  const { currentGroup, updateCurrentGroup } = useGroups();
+
+  const people = currentGroup?.people || [];
+  const expenses = currentGroup?.expenses || [];
+
+  // const [expenses, setExpenses] = useLocalStorage<Expense[]>("expenses", []);
+  // const [people, setPeople] = useLocalStorage<Person[]>("people", []);
 
   const addPerson = (name: string) => {
     const newPerson = {
@@ -43,11 +49,19 @@ export function useExpenses() {
       name,
       color: generatePastelColor(),
     };
-    setPeople((prev) => [...prev, newPerson]);
+    // setPeople((prev) => [...prev, newPerson]);
+    updateCurrentGroup((group) => ({
+      ...group,
+      people: [...group.people, newPerson],
+    }));
   };
 
   const deletePerson = (id: string) => {
-    setPeople((prev) => prev.filter((person) => person.id !== id));
+    // setPeople((prev) => prev.filter((person) => person.id !== id));
+    updateCurrentGroup((group) => ({
+      ...group,
+      people: group.people.filter((person) => person.id !== id),
+    }));
   };
 
   const addExpense = (expense: Omit<Expense, "id">) => {
@@ -55,7 +69,11 @@ export function useExpenses() {
       ...expense,
       id: crypto.randomUUID(),
     };
-    setExpenses((prev) => [...prev, newExpense]);
+    // setExpenses((prev) => [...prev, newExpense]);
+    updateCurrentGroup((group) => ({
+      ...group,
+      expenses: [...group.expenses, newExpense],
+    }));
   };
 
   const totalExpenses = expenses.reduce(
@@ -64,15 +82,25 @@ export function useExpenses() {
   );
 
   const deleteExpense = (id: string) => {
-    setExpenses((prev) => prev.filter((expense) => expense.id !== id));
+    // setExpenses((prev) => prev.filter((expense) => expense.id !== id));
+    updateCurrentGroup((group) => ({
+      ...group,
+      expenses: group.expenses.filter((expense) => expense.id !== id),
+    }));
   };
 
   const editExpense = (id: string, updatedExpense: Omit<Expense, "id">) => {
-    setExpenses((prev) =>
-      prev.map((expense) =>
+    // setExpenses((prev) =>
+    //   prev.map((expense) =>
+    //     expense.id === id ? { ...updatedExpense, id } : expense
+    //   )
+    // );
+    updateCurrentGroup((group) => ({
+      ...group,
+      expenses: group.expenses.map((expense) =>
         expense.id === id ? { ...updatedExpense, id } : expense
-      )
-    );
+      ),
+    }));
   };
 
   const calculateSharedExpenses = () => {
@@ -140,11 +168,19 @@ export function useExpenses() {
   };
 
   const clearPeopleData = () => {
-    setPeople([]);
+    // setPeople([]);
+    updateCurrentGroup((group) => ({
+      ...group,
+      people: [],
+    }));
   };
 
   const clearExpensesData = () => {
-    setExpenses([]);
+    // setExpenses([]);
+    updateCurrentGroup((group) => ({
+      ...group,
+      expenses: [],
+    }));
   };
 
   return {
