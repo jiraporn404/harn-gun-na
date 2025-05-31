@@ -40,6 +40,7 @@ function Homepage() {
       //   left: "50%",
       //   transform: "translate(-50%, -50%)",
       // }}
+      p={2}
     >
       <Typography variant="h4" align="center">
         💰 Harn Gun Na 💰

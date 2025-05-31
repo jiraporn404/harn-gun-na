@@ -16,7 +16,6 @@ export const Route = createRootRoute({
     >
       <Box
         sx={{
-          p: 2,
           width: "-webkit-fill-available",
           flex: 1,
           display: "flex",
@@ -33,7 +32,6 @@ export const Route = createRootRoute({
           flexDirection: "row",
           justifyContent: "center",
           backgroundColor: "background.paper",
-          px: 2,
         }}
       >
         <Typography fontSize={10} align="center" color="text.secondary">

@@ -289,9 +289,6 @@ function RouteComponent() {
     setSaveSnackbarOpen(false);
   };
 
-  console.log(people);
-  console.log(currentGroup);
-
   return (
     <Stack
       spacing={2}
@@ -902,7 +899,7 @@ function RouteComponent() {
         </Box>
       </Paper>
       {/* Clear data */}
-      <Stack direction={"row"} justifyContent={"space-between"} width={1}>
+      <Stack justifyContent={"center"} alignItems={"center"} width={1}>
         <Button
           variant="contained"
           color="info"
@@ -913,7 +910,11 @@ function RouteComponent() {
         >
           <HomeIcon fontSize="small" /> Home
         </Button>
-        <Stack direction={"row"} alignSelf={"flex-end"}>
+        <Stack
+          direction={"row"}
+          justifyContent={"space-between"}
+          alignItems={"center"}
+        >
           <Button
             variant="outlined"
             color="error"
