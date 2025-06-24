@@ -1,4 +1,4 @@
-import { Expense, Person } from "./useExpenses";
+import { Expense, generatePastelColor, Person } from "./useExpenses";
 import { useLocalStorage } from "./useLocalStorage";
 
 interface Group {
@@ -6,6 +6,7 @@ interface Group {
   name: string;
   people: Person[];
   expenses: Expense[];
+  color: string;
 }
 
 interface AppData {
@@ -30,6 +31,7 @@ export function useGroups() {
       name,
       people: [],
       expenses: [],
+      color: generatePastelColor(),
     };
     setAppData((prev) => ({
       ...prev,

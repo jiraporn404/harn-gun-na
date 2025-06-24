@@ -19,7 +19,6 @@ export const Route = createRootRoute({
           width: "-webkit-fill-available",
           flex: 1,
           display: "flex",
-          // alignItems: "center",
           justifyContent: "center",
         }}
       >

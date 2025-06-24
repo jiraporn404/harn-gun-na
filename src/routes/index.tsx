@@ -5,15 +5,19 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
   Paper,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useGroups } from "../hooks/useGroups";
-import { generatePastelColor } from "../hooks/useExpenses";
+import { AddOutlined, CloseOutlined } from "@mui/icons-material";
 
 export const Route = createFileRoute("/")({
   component: Homepage,
@@ -25,6 +29,7 @@ function Homepage() {
   const [newGroupName, setNewGroupName] = useState("");
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [search, setSearch] = useState("");
+  const [isSearch, setIsSearch] = useState(false);
 
   return (
     <Stack
@@ -45,10 +50,6 @@ function Homepage() {
       <Typography variant="h4" align="center">
         💰 Harn Gun Na 💰
       </Typography>
-      {/* <Typography variant="subtitle1" align="center">
-        Easily track shared expenses and settle up with friends. Log who paid,
-        split costs fairly, and see who owes what — all in one simple app.
-      </Typography> */}
       <Stack direction={"row"} justifyContent={"center"} spacing={2}>
         <Box
           bgcolor={"primary.main"}
@@ -100,39 +101,62 @@ function Homepage() {
         />
       </Stack>
       <Stack width={1}>
-        <Stack direction={"row"}>
+        {isSearch && (
           <TextField
             label="ค้นหากลุ่ม"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             sx={{ flexGrow: 1 }}
-          />
-          <Button
-            variant="outlined"
-            color="warning"
-            onClick={() => {
-              setSearch("");
+            InputProps={{
+              endAdornment: (
+                <InputAdornment
+                  position="end"
+                  onClick={() => {
+                    setSearch("");
+                  }}
+                >
+                  <IconButton
+                    size="small"
+                    sx={{
+                      opacity: search.length > 0 ? 1 : 0,
+                      transition: "opacity 0.2s ease-in-out",
+                    }}
+                  >
+                    <CloseOutlined fontSize="small" color="warning" />
+                  </IconButton>
+                </InputAdornment>
+              ),
             }}
+          />
+        )}
+
+        <Stack direction={"row"} justifyContent={"space-between"}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isSearch}
+                onChange={() => setIsSearch(!isSearch)}
+              />
+            }
+            label="ค้นหากลุ่ม"
+          />{" "}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              setNewGroupName("");
+              setIsCreatingGroup(true);
+            }}
+            sx={{ width: "fit-content", alignSelf: "flex-end", color: "white" }}
           >
-            ล้างค่า
+            <AddOutlined fontSize="small" /> เพิ่มกลุ่ม
           </Button>
         </Stack>
-
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => {
-            setIsCreatingGroup(true);
-          }}
-          sx={{ width: "fit-content", alignSelf: "flex-end" }}
-        >
-          ➕ เพิ่มกลุ่ม
-        </Button>
       </Stack>
 
       <Box
         display={"grid"}
-        gridTemplateColumns={"repeat(2, 1fr)"}
+        gridTemplateColumns={"repeat(1, 1fr)"}
         gap={2}
         width={"100%"}
       >
@@ -145,16 +169,16 @@ function Homepage() {
               key={group.id}
               sx={{
                 p: 2,
+                py: 1,
                 cursor: "pointer",
-                bgcolor: generatePastelColor(),
+                bgcolor: group.color,
               }}
               onClick={() => {
                 setActiveGroup(group.id);
                 navigate({ to: "/harngunna", search: { groupId: group.id } });
               }}
             >
-              <Typography variant="h6">{group.name}</Typography>
-              <Typography variant="body2">{group.people.length} คน</Typography>
+              <Typography fontWeight={500}>{group.name}</Typography>
             </Paper>
           ))}
       </Box>
@@ -171,6 +195,16 @@ function Homepage() {
             onChange={(e) => setNewGroupName(e.target.value)}
             fullWidth
             margin="dense"
+            autoComplete="off"
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                if (newGroupName.trim()) {
+                  await createGroup(newGroupName);
+                  setNewGroupName("");
+                  setIsCreatingGroup(false);
+                }
+              }
+            }}
           />
         </DialogContent>
         <DialogActions>
@@ -183,9 +217,10 @@ function Homepage() {
           </Button>
           <Button
             variant="contained"
-            onClick={() => {
+            disabled={!newGroupName.trim()}
+            onClick={async () => {
               if (newGroupName.trim()) {
-                createGroup(newGroupName);
+                await createGroup(newGroupName);
                 setNewGroupName("");
                 setIsCreatingGroup(false);
               }

@@ -60,7 +60,7 @@ function RouteComponent() {
     addExpense,
     addPerson,
     totalExpenses,
-    calculateSharedExpenses,
+    // calculateSharedExpenses,
     calculateTransactions,
     deletePerson,
     deleteExpense,
@@ -71,10 +71,11 @@ function RouteComponent() {
   const { groupId } = Route.useSearch();
   const { deleteGroup, currentGroup } = useGroups();
   const navigate = useNavigate();
-  const balanceCardsRef = useRef<HTMLDivElement>(null);
+  // const balanceCardsRef = useRef<HTMLDivElement>(null);
   const transactionsRef = useRef<HTMLDivElement>(null);
   const expensesRef = useRef<HTMLDivElement>(null);
   const editPaperRef = useRef<HTMLDivElement>(null);
+  const expensePerPersonRef = useRef<HTMLDivElement>(null);
   const isSmallScreen = useMediaQuery("(max-width: 600px)");
   const [expenseName, setExpenseName] = useState("");
   const [newPersonName, setNewPersonName] = useState("");
@@ -180,7 +181,7 @@ function RouteComponent() {
     setIsSharedAll(false);
   };
 
-  const balances = calculateSharedExpenses();
+  // const balances = calculateSharedExpenses();
   const transactions = calculateTransactions();
 
   const handleSharedAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,26 +217,26 @@ function RouteComponent() {
     setDeleteSnackbarOpen(false);
   };
 
-  const handleSaveBalanceImage = async () => {
-    if (!balanceCardsRef.current) return;
+  // const handleSaveBalanceImage = async () => {
+  //   if (!balanceCardsRef.current) return;
 
-    try {
-      const canvas = await html2canvas(balanceCardsRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-      });
+  //   try {
+  //     const canvas = await html2canvas(balanceCardsRef.current, {
+  //       backgroundColor: "#ffffff",
+  //       scale: 2,
+  //     });
 
-      const image = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = "harn-gun-na-balances.png";
-      link.href = image;
-      link.click();
+  //     const image = canvas.toDataURL("image/png");
+  //     const link = document.createElement("a");
+  //     link.download = "harn-gun-na-balances.png";
+  //     link.href = image;
+  //     link.click();
 
-      setSaveSnackbarOpen(true);
-    } catch (error) {
-      console.error("Error saving image:", error);
-    }
-  };
+  //     setSaveSnackbarOpen(true);
+  //   } catch (error) {
+  //     console.error("Error saving image:", error);
+  //   }
+  // };
 
   const handleSaveTransactionImage = async () => {
     if (!transactionsRef.current) return;
@@ -279,6 +280,27 @@ function RouteComponent() {
     }
   };
 
+  const handleSaveExpensePerPersonImage = async () => {
+    if (!expensePerPersonRef.current) return;
+
+    try {
+      const canvas = await html2canvas(expensePerPersonRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+      });
+
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = "harn-gun-na-expenses-per-person.png";
+      link.href = image;
+      link.click();
+
+      setSaveSnackbarOpen(true);
+    } catch (error) {
+      console.error("Error saving image:", error);
+    }
+  };
+
   const handleCloseSaveSnackbar = (
     _event: React.SyntheticEvent | Event,
     reason?: SnackbarCloseReason
@@ -291,7 +313,7 @@ function RouteComponent() {
 
   return (
     <Stack
-      spacing={2}
+      spacing={1}
       sx={{
         py: 2,
         minWidth: { xs: "100%", sm: "80vw", md: "80vw" },
@@ -754,6 +776,23 @@ function RouteComponent() {
                       );
                     })}
                   </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography
+                      component={"span"}
+                      fontSize={14}
+                      color="text.secondary"
+                    >
+                      ยอดเงิน:
+                    </Typography>
+                    <Typography component={"span"} fontSize={14} color="error">
+                      {(
+                        expense.totalAmount / expense.sharedWith.length
+                      ).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
             </ListItem>
@@ -833,7 +872,7 @@ function RouteComponent() {
         </List>
       </Paper>
       {/* Balances */}
-      <Paper ref={balanceCardsRef} sx={{ p: 2 }}>
+      {/* <Paper ref={balanceCardsRef} sx={{ p: 2 }}>
         <Stack
           direction="row"
           justifyContent="space-between"
@@ -897,6 +936,122 @@ function RouteComponent() {
             </Box>
           ))}
         </Box>
+      </Paper> */}
+      {/* Expense by person */}
+      <Paper ref={expensePerPersonRef} sx={{ p: 2 }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mb: 2 }}
+        >
+          <Typography component={"span"} fontSize={18} fontWeight={500}>
+            ค่าใช้จ่ายต่อคน
+          </Typography>
+          <Tooltip title="บันทึกเป็นรูปภาพ">
+            <IconButton
+              onClick={handleSaveExpensePerPersonImage}
+              color="inherit"
+              sx={{
+                opacity: 0.7,
+                "&:hover": {
+                  opacity: 1,
+                },
+              }}
+              data-html2canvas-ignore="true"
+            >
+              <SaveAltIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+        <Stack spacing={1}>
+          {people.map((person) => {
+            // Calculate total amount each person should pay (their share of expenses)
+            const totalSharedAmount = expenses
+              .filter((e) => e.sharedWith.includes(person.id))
+              .reduce((sum, expense) => {
+                const sharePerPerson =
+                  expense.totalAmount / expense.sharedWith.length;
+                return sum + sharePerPerson;
+              }, 0);
+
+            // Calculate total amount each person has paid
+            const totalPaidAmount = expenses.reduce((sum, expense) => {
+              const personPayments = expense.payments.filter(
+                (payment) => payment.payerId === person.id
+              );
+              return (
+                sum +
+                personPayments.reduce(
+                  (paymentSum, payment) => paymentSum + payment.amount,
+                  0
+                )
+              );
+            }, 0);
+
+            // Calculate balance (positive = they're owed money, negative = they owe money)
+            const balance = totalPaidAmount - totalSharedAmount;
+
+            return (
+              <Box
+                key={person.id}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  p: 1,
+                  px: 0,
+                }}
+              >
+                <Chip
+                  label={person.name}
+                  sx={{
+                    bgcolor: person.color,
+                  }}
+                />
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography component={"span"} fontSize={14}>
+                    ฿
+                    {totalPaidAmount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    /
+                  </Typography>
+                  <Typography
+                    component={"span"}
+                    fontSize={14}
+                    color="text.secondary"
+                  >
+                    ฿
+                    {totalSharedAmount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Typography>
+                  <Typography
+                    component={"span"}
+                    fontSize={16}
+                    fontWeight={500}
+                    color={
+                      balance === 0
+                        ? "inherit"
+                        : balance > 0
+                          ? "success.main"
+                          : "error.main"
+                    }
+                  >
+                    {balance >= 0 ? "+" : ""}฿
+                    {balance.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Typography>
+                </Stack>
+              </Box>
+            );
+          })}
+        </Stack>
       </Paper>
       {/* Clear data */}
       <Stack justifyContent={"center"} alignItems={"center"} width={1}>
@@ -923,7 +1078,7 @@ function RouteComponent() {
               navigate({ to: "/" });
             }}
           >
-            <DeleteIcon fontSize="small" /> ข้อมูลกลุ่ม
+            <DeleteIcon fontSize="small" /> กลุ่ม
           </Button>
           <Button
             variant="outlined"
@@ -938,7 +1093,7 @@ function RouteComponent() {
             }}
             sx={{ width: "fit-content" }}
           >
-            <DeleteIcon fontSize="small" /> ข้อมูลคน
+            <DeleteIcon fontSize="small" /> คน
           </Button>
           <Button
             variant="outlined"
@@ -949,7 +1104,7 @@ function RouteComponent() {
             }}
             sx={{ width: "fit-content" }}
           >
-            <DeleteIcon fontSize="small" /> ข้อมูลรายการ
+            <DeleteIcon fontSize="small" /> รายการ
           </Button>
         </Stack>
       </Stack>
