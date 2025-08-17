@@ -1,55 +1,43 @@
-import { createFileRoute } from "@tanstack/react-router";
 import {
-  Stack,
-  Typography,
-  TextField,
+  Box,
   Button,
-  Paper,
+  Chip,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  IconButton,
+  InputLabel,
   List,
   ListItem,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
-  Box,
-  IconButton,
-  useMediaQuery,
-  FormControlLabel,
-  Checkbox,
-  Snackbar,
-  SnackbarCloseReason,
-  AlertTitle,
-  Alert,
-  Tooltip,
+  Paper,
+  Radio,
+  RadioGroup,
+  Select,
+  Stack,
   Switch,
-  Divider,
+  TextField,
+  Tooltip,
+  Typography,
+  useMediaQuery,
 } from "@mui/material";
-import { Expense, useExpenses } from "../hooks/useExpenses";
-import { useState, useRef } from "react";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import html2canvas from "html2canvas";
+import { useEffect, useRef, useState } from "react";
+import { CustomSnackbar } from "../components/CustomSnackbar";
 import { DeleteDialog } from "../dialog/deleteDialog";
+import { Expense, useExpenses } from "../hooks/useExpenses";
 import { useGroups } from "../hooks/useGroups";
-import HomeIcon from "@mui/icons-material/Home";
-import { useNavigate } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/harngunna")({
-  component: RouteComponent,
-  validateSearch: (search) => {
-    if (typeof search.groupId !== "string") {
-      throw new Error("Missing or invalid groupId in search params");
-    }
-    return {
-      groupId: search.groupId,
-    };
-  },
-});
+import { useSnackbar } from "../hooks/useSnackbar";
+import { DeleteIcon, EditIcon, HomeIcon, SaveAltIcon } from "../icons";
 
 interface PaymentInput {
   payerId: string;
+  amount: string;
+}
+
+interface SharedAmountInput {
+  personId: string;
   amount: string;
 }
 
@@ -60,7 +48,6 @@ function RouteComponent() {
     addExpense,
     addPerson,
     totalExpenses,
-    // calculateSharedExpenses,
     calculateTransactions,
     deletePerson,
     deleteExpense,
@@ -70,8 +57,8 @@ function RouteComponent() {
   } = useExpenses();
   const { groupId } = Route.useSearch();
   const { deleteGroup, currentGroup } = useGroups();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
   const navigate = useNavigate();
-  // const balanceCardsRef = useRef<HTMLDivElement>(null);
   const transactionsRef = useRef<HTMLDivElement>(null);
   const expensesRef = useRef<HTMLDivElement>(null);
   const editPaperRef = useRef<HTMLDivElement>(null);
@@ -79,11 +66,11 @@ function RouteComponent() {
   const isSmallScreen = useMediaQuery("(max-width: 600px)");
   const [expenseName, setExpenseName] = useState("");
   const [newPersonName, setNewPersonName] = useState("");
-  const [sharedWith, setSharedWith] = useState<string[]>([]);
+  const [sharedWith, setSharedWith] = useState<SharedAmountInput[]>([]);
   const [payments, setPayments] = useState<PaymentInput[]>([
     { payerId: "", amount: "" },
   ]);
-  const [isSharedAll, setIsSharedAll] = useState(false);
+  const [sharedType, setSharedType] = useState<"equal" | "perPerson">("equal");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteDialogType, setDeleteDialogType] = useState<
     "person" | "expense" | "people" | "expenses" | null
@@ -91,8 +78,6 @@ function RouteComponent() {
   const [deletePersonId, setDeletePersonId] = useState<string | null>(null);
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
-  const [saveSnackbarOpen, setSaveSnackbarOpen] = useState(false);
-  const [deleteSnackbarOpen, setDeleteSnackbarOpen] = useState(false);
   const [isAddPayer, setIsAddPayer] = useState(false);
 
   const handleAddPerson = (e: React.FormEvent) => {
@@ -126,11 +111,19 @@ function RouteComponent() {
       return;
 
     if (payments.some((p) => !p.payerId || !p.amount)) return;
+    if (sharedWith.some((s) => !s.personId || !s.amount)) return;
 
-    const totalAmount = payments.reduce(
-      (sum, p) => sum + parseFloat(p.amount),
+    const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    const totalSharedAmount = sharedWith.reduce(
+      (sum, s) => sum + Number(s.amount),
       0
     );
+
+    if (Math.abs(totalAmount - totalSharedAmount) > 0.01) {
+      showSnackbar("ยอดเงินที่หารต้องเท่ากับยอดเงินรวม", "error");
+      return;
+    }
 
     const expenseData = {
       name: expenseName,
@@ -138,9 +131,12 @@ function RouteComponent() {
       date: new Date().toISOString(),
       payments: payments.map((p) => ({
         payerId: p.payerId,
-        amount: parseFloat(p.amount),
+        amount: Number(p.amount),
       })),
-      sharedWith,
+      sharedWith: sharedWith.map((s) => ({
+        personId: s.personId,
+        amount: Number(s.amount),
+      })),
     };
 
     if (editingExpenseId) {
@@ -152,12 +148,28 @@ function RouteComponent() {
 
     setExpenseName("");
     setPayments([{ payerId: "", amount: "" }]);
-    setSharedWith([]);
-    setIsSharedAll(false);
+    setSharedWith([{ personId: "", amount: "" }]);
   };
 
   const handleEditExpense = (expense: Expense) => {
     setEditingExpenseId(expense.id);
+    setTimeout(() => {
+      editPaperRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
+  useEffect(() => {
+    const expense = expenses.find((e) => e.id === editingExpenseId);
+    if (!expense) return;
+    if (
+      expense.sharedWith.every(
+        (item) => item.amount === expense.sharedWith[0].amount
+      )
+    ) {
+      setSharedType("equal");
+    } else {
+      setSharedType("perPerson");
+    }
     setExpenseName(expense.name);
     setPayments(
       expense.payments.map((p) => ({
@@ -165,32 +177,39 @@ function RouteComponent() {
         amount: p.amount.toString(),
       }))
     );
-    setSharedWith(expense.sharedWith);
-    setIsSharedAll(expense.sharedWith.length === people.length);
-
-    setTimeout(() => {
-      editPaperRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  };
+    setSharedWith(
+      expense.sharedWith.map((s) => ({
+        personId: s.personId,
+        amount: s.amount.toString(),
+      }))
+    );
+  }, [editingExpenseId]);
 
   const handleCancelEdit = () => {
     setEditingExpenseId(null);
     setExpenseName("");
     setPayments([{ payerId: "", amount: "" }]);
-    setSharedWith([]);
-    setIsSharedAll(false);
+    setSharedWith([{ personId: "", amount: "" }]);
   };
 
-  // const balances = calculateSharedExpenses();
   const transactions = calculateTransactions();
 
-  const handleSharedAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsSharedAll(e.target.checked);
-    if (e.target.checked) {
-      setSharedWith(people.map((p) => p.id));
-    } else {
-      setSharedWith([]);
-    }
+  const handleAddSharedPerson = () => {
+    setSharedWith([...sharedWith, { personId: "", amount: "" }]);
+  };
+
+  const handleRemoveSharedPerson = (index: number) => {
+    setSharedWith(sharedWith.filter((_, i) => i !== index));
+  };
+
+  const handleSharedAmountChange = (
+    index: number,
+    field: keyof SharedAmountInput,
+    value: string
+  ) => {
+    const newSharedWith = [...sharedWith];
+    newSharedWith[index] = { ...newSharedWith[index], [field]: value };
+    setSharedWith(newSharedWith);
   };
 
   const handleDelete = () => {
@@ -205,38 +224,6 @@ function RouteComponent() {
     }
     setDeleteDialogOpen(false);
   };
-
-  const handleCloseSnackbar = (
-    _event: React.SyntheticEvent | Event,
-    reason?: SnackbarCloseReason
-  ) => {
-    if (reason === "clickaway") {
-      return;
-    }
-
-    setDeleteSnackbarOpen(false);
-  };
-
-  // const handleSaveBalanceImage = async () => {
-  //   if (!balanceCardsRef.current) return;
-
-  //   try {
-  //     const canvas = await html2canvas(balanceCardsRef.current, {
-  //       backgroundColor: "#ffffff",
-  //       scale: 2,
-  //     });
-
-  //     const image = canvas.toDataURL("image/png");
-  //     const link = document.createElement("a");
-  //     link.download = "harn-gun-na-balances.png";
-  //     link.href = image;
-  //     link.click();
-
-  //     setSaveSnackbarOpen(true);
-  //   } catch (error) {
-  //     console.error("Error saving image:", error);
-  //   }
-  // };
 
   const handleSaveTransactionImage = async () => {
     if (!transactionsRef.current) return;
@@ -253,7 +240,7 @@ function RouteComponent() {
       link.href = image;
       link.click();
 
-      setSaveSnackbarOpen(true);
+      showSnackbar("บันทึกรูปภาพสำเร็จ", "success");
     } catch (error) {
       console.error("Error saving image:", error);
     }
@@ -274,7 +261,7 @@ function RouteComponent() {
       link.href = image;
       link.click();
 
-      setSaveSnackbarOpen(true);
+      showSnackbar("บันทึกรูปภาพสำเร็จ", "success");
     } catch (error) {
       console.error("Error saving image:", error);
     }
@@ -295,21 +282,47 @@ function RouteComponent() {
       link.href = image;
       link.click();
 
-      setSaveSnackbarOpen(true);
+      showSnackbar("บันทึกรูปภาพสำเร็จ", "success");
     } catch (error) {
       console.error("Error saving image:", error);
     }
   };
 
-  const handleCloseSaveSnackbar = (
-    _event: React.SyntheticEvent | Event,
-    reason?: SnackbarCloseReason
-  ) => {
-    if (reason === "clickaway") {
-      return;
+  useEffect(() => {
+    const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    if (sharedType === "equal") {
+      setSharedWith(
+        people.map((p) => ({
+          personId: p.id,
+          amount:
+            totalAmount > 0 ? (totalAmount / people.length).toString() : "0",
+        }))
+      );
     }
-    setSaveSnackbarOpen(false);
-  };
+  }, [payments]);
+
+  useEffect(() => {
+    if (sharedType === "equal") {
+      const totalAmount = payments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0
+      );
+      const equalAmount = (totalAmount / people.length).toString();
+      setSharedWith(
+        people.map((p) => ({
+          personId: p.id,
+          amount: equalAmount,
+        }))
+      );
+    } else {
+      setSharedWith(
+        people.map((p) => ({
+          personId: p.id,
+          amount: sharedWith.find((s) => s.personId === p.id)?.amount || "",
+        }))
+      );
+    }
+  }, [sharedType]);
 
   return (
     <Stack
@@ -383,14 +396,22 @@ function RouteComponent() {
                       )
                     ) ||
                     expenses.some((expense) =>
-                      expense.sharedWith.includes(person.id)
+                      expense.sharedWith.some(
+                        (shared) => shared.personId === person.id
+                      )
                     )
                   ) {
-                    setDeleteSnackbarOpen(true);
+                    showSnackbar(
+                      "มีรายการชำระเงิน กรุณาลบรายการชำระเงินก่อน",
+                      "error"
+                    );
                   } else {
                     setDeletePersonId(person.id);
                     setDeleteDialogType("person");
                     deletePerson(person.id);
+                    setSharedWith(
+                      sharedWith.filter((s) => s.personId !== person.id)
+                    );
                   }
                 }}
               />
@@ -449,7 +470,11 @@ function RouteComponent() {
                     notched
                   >
                     {people.map((person) => (
-                      <MenuItem key={person.id} value={person.id}>
+                      <MenuItem
+                        key={person.id}
+                        value={person.id}
+                        disabled={payments.some((p) => p.payerId === person.id)}
+                      >
                         <Box
                           sx={{
                             display: "flex",
@@ -478,14 +503,13 @@ function RouteComponent() {
                   width={1}
                 >
                   <TextField
-                    label="จำนวน"
+                    label="จำนวนเงิน"
                     type="number"
                     value={payment.amount}
                     onChange={(e) =>
                       handlePaymentChange(index, "amount", e.target.value)
                     }
                     required
-                    // sx={{ width: isSmallScreen ? "100%" : "150px" }}
                     disabled={people.length === 0 || payment.payerId === ""}
                     fullWidth
                   />
@@ -511,78 +535,246 @@ function RouteComponent() {
             >
               เพิ่มชำระเงิน
             </Button>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={isSharedAll}
-                  onChange={handleSharedAllChange}
-                />
+            <RadioGroup
+              value={sharedType}
+              onChange={(e) =>
+                setSharedType(e.target.value as "equal" | "perPerson")
               }
-              label="แบ่งกับทุกคน"
-            />
-            <FormControl fullWidth required>
-              <InputLabel size="small" shrink>
-                แบ่งกับ
-              </InputLabel>
-              <Select
-                multiple
-                value={sharedWith}
-                onChange={(e) => {
-                  if (e.target.value.length === people.length) {
-                    setIsSharedAll(true);
-                  } else {
-                    setIsSharedAll(false);
-                  }
-                  setSharedWith(e.target.value as string[]);
-                }}
-                label="แบ่งกับ"
-                renderValue={(selected) => (
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                    {selected.map((value) => {
-                      const person = people.find((p) => p.id === value);
-                      return (
-                        <Chip
-                          key={value}
-                          label={person?.name}
-                          sx={{
-                            backgroundColor: person?.color,
-                            "&:hover": {
+              row
+            >
+              <FormControlLabel
+                value="equal"
+                control={<Radio />}
+                label="หารเท่ากัน"
+              />
+              <FormControlLabel
+                value="perPerson"
+                control={<Radio />}
+                label="หารรายคน"
+              />
+            </RadioGroup>
+
+            {sharedType === "equal" && (
+              <FormControl fullWidth required>
+                <InputLabel size="small" shrink>
+                  หารกับ
+                </InputLabel>
+                <Select
+                  multiple
+                  value={sharedWith.map((s) => s.personId)}
+                  onChange={(e) => {
+                    const selectedPersonIds = e.target.value as string[];
+                    const totalAmount = payments.reduce(
+                      (sum, p) => sum + Number(p.amount),
+                      0
+                    );
+                    const equalAmount =
+                      totalAmount > 0
+                        ? (totalAmount ? totalAmount : 0) /
+                          selectedPersonIds.length
+                        : "0";
+                    setSharedWith(
+                      selectedPersonIds.map((personId) => ({
+                        personId,
+                        amount: equalAmount.toString(),
+                      }))
+                    );
+                  }}
+                  label="หารกับ"
+                  renderValue={(selected) => (
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                      {selected.map((personId) => {
+                        const person = people.find((p) => p.id === personId);
+                        const amount =
+                          sharedWith.find((s) => s.personId === personId)
+                            ?.amount || "0";
+                        return (
+                          <Chip
+                            key={personId}
+                            label={`${person?.name} ฿ ${
+                              amount
+                                ? Number(amount).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })
+                                : "0"
+                            }`}
+                            sx={{
                               backgroundColor: person?.color,
-                              opacity: 0.8,
-                            },
+                              "&:hover": {
+                                backgroundColor: person?.color,
+                                opacity: 0.8,
+                              },
+                            }}
+                          />
+                        );
+                      })}
+                    </Box>
+                  )}
+                  disabled={people.length === 0}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        maxHeight: 300,
+                      },
+                    },
+                  }}
+                  notched
+                >
+                  {people.map((person) => (
+                    <MenuItem key={person.id} value={person.id}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <Box
+                          sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: "50%",
+                            backgroundColor: person.color,
                           }}
                         />
+                        {person.name}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+            {sharedType === "perPerson" && (
+              <>
+                {sharedWith.length > 0 && (
+                  <Stack spacing={2}>
+                    <Typography component={"span"} variant="subtitle1">
+                      ระบุจำนวนเงินที่หารแต่ละคน (
+                      <Typography
+                        component={"span"}
+                        variant="subtitle1"
+                        color={
+                          sharedWith.reduce(
+                            (sum, s) => sum + Number(s.amount),
+                            0
+                          ) !==
+                          payments.reduce((sum, p) => sum + Number(p.amount), 0)
+                            ? "error"
+                            : "success"
+                        }
+                      >
+                        {sharedWith.reduce(
+                          (sum, s) => sum + Number(s.amount),
+                          0
+                        )}
+                      </Typography>
+                      /
+                      <Typography component={"span"} variant="subtitle1">
+                        {payments.reduce((sum, p) => sum + Number(p.amount), 0)}
+                      </Typography>
+                      )
+                    </Typography>
+                    {sharedWith.map((shared, index) => {
+                      return (
+                        <Stack
+                          key={index}
+                          direction="row"
+                          spacing={2}
+                          alignItems="center"
+                        >
+                          <FormControl sx={{ flex: 1 }} required>
+                            <InputLabel size="small" shrink>
+                              คนที่หาร
+                            </InputLabel>
+                            <Select
+                              value={shared.personId}
+                              onChange={(e) =>
+                                handleSharedAmountChange(
+                                  index,
+                                  "personId",
+                                  e.target.value
+                                )
+                              }
+                              label="คนที่หาร"
+                              disabled={people.length === 0}
+                              MenuProps={{
+                                PaperProps: {
+                                  sx: {
+                                    maxHeight: 300,
+                                  },
+                                },
+                              }}
+                              notched
+                            >
+                              {people.map((person) => (
+                                <MenuItem
+                                  key={person.id}
+                                  value={person.id}
+                                  disabled={sharedWith.some(
+                                    (s) => s.personId === person.id
+                                  )}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1,
+                                    }}
+                                  >
+                                    <Box
+                                      sx={{
+                                        width: 16,
+                                        height: 16,
+                                        borderRadius: "50%",
+                                        backgroundColor: person.color,
+                                      }}
+                                    />
+                                    {person.name}
+                                  </Box>
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                          <TextField
+                            label="จำนวนเงิน"
+                            type="number"
+                            value={shared.amount}
+                            onChange={(e) =>
+                              handleSharedAmountChange(
+                                index,
+                                "amount",
+                                e.target.value
+                              )
+                            }
+                            required
+                            disabled={
+                              people.length === 0 || shared.personId === ""
+                            }
+                            sx={{ width: "150px" }}
+                          />
+                          {sharedWith.length > 1 && (
+                            <IconButton
+                              onClick={() => handleRemoveSharedPerson(index)}
+                              color="error"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          )}
+                        </Stack>
                       );
                     })}
-                  </Box>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      onClick={handleAddSharedPerson}
+                      sx={{ alignSelf: "flex-start" }}
+                      color="success"
+                      startIcon={"👥"}
+                      disabled={sharedWith.length === people.length}
+                    >
+                      เพิ่มคนที่หาร
+                    </Button>
+                  </Stack>
                 )}
-                disabled={people.length === 0}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      maxHeight: 300,
-                    },
-                  },
-                }}
-                notched
-              >
-                {people.map((person) => (
-                  <MenuItem key={person.id} value={person.id}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: "50%",
-                          backgroundColor: person.color,
-                        }}
-                      />
-                      {person.name}
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+              </>
+            )}
             <Stack direction={"row"} width={1}>
               {editingExpenseId && (
                 <Button
@@ -756,14 +948,22 @@ function RouteComponent() {
                       fontSize={14}
                       color="text.secondary"
                     >
-                      แบ่งกับ:
+                      หารกับ:
                     </Typography>
-                    {expense.sharedWith.map((id) => {
-                      const person = people.find((p) => p.id === id);
+                    {expense.sharedWith.map((shared) => {
+                      const person = people.find(
+                        (p) => p.id === shared.personId
+                      );
                       return (
                         <Chip
-                          key={id}
-                          label={person?.name}
+                          key={shared.personId}
+                          label={`${person?.name} ฿ ${shared.amount.toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}`}
                           size="small"
                           sx={{
                             backgroundColor: person?.color,
@@ -775,23 +975,6 @@ function RouteComponent() {
                         />
                       );
                     })}
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography
-                      component={"span"}
-                      fontSize={14}
-                      color="text.secondary"
-                    >
-                      ยอดเงิน:
-                    </Typography>
-                    <Typography component={"span"} fontSize={14} color="error">
-                      {(
-                        expense.totalAmount / expense.sharedWith.length
-                      ).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </Typography>
                   </Box>
                 </Box>
               </Box>
@@ -966,16 +1149,16 @@ function RouteComponent() {
         </Stack>
         <Stack spacing={1}>
           {people.map((person) => {
-            // Calculate total amount each person should pay (their share of expenses)
-            const totalSharedAmount = expenses
-              .filter((e) => e.sharedWith.includes(person.id))
-              .reduce((sum, expense) => {
-                const sharePerPerson =
-                  expense.totalAmount / expense.sharedWith.length;
-                return sum + sharePerPerson;
-              }, 0);
+            const totalSharedAmount = expenses.reduce((sum, expense) => {
+              const personShared = expense.sharedWith.filter(
+                (shared) => shared.personId === person.id
+              );
+              return (
+                sum +
+                personShared.reduce((sum, shared) => sum + shared.amount, 0)
+              );
+            }, 0);
 
-            // Calculate total amount each person has paid
             const totalPaidAmount = expenses.reduce((sum, expense) => {
               const personPayments = expense.payments.filter(
                 (payment) => payment.payerId === person.id
@@ -1085,7 +1268,10 @@ function RouteComponent() {
             color="error"
             onClick={() => {
               if (expenses.length > 0) {
-                setDeleteSnackbarOpen(true);
+                showSnackbar(
+                  "มีรายการชำระเงิน กรุณาลบรายการชำระเงินก่อน",
+                  "error"
+                );
               } else {
                 setDeleteDialogType("people");
                 setDeleteDialogOpen(true);
@@ -1116,30 +1302,25 @@ function RouteComponent() {
           onDelete={handleDelete}
         />
       )}
-      {deleteSnackbarOpen && (
-        <Snackbar
-          open={deleteSnackbarOpen}
-          autoHideDuration={5000}
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <Alert severity="error" onClose={handleCloseSnackbar}>
-            <AlertTitle>มีรายการชำระเงิน กรุณาลบรายการชำระเงินก่อน</AlertTitle>
-          </Alert>
-        </Snackbar>
-      )}
-      {saveSnackbarOpen && (
-        <Snackbar
-          open={saveSnackbarOpen}
-          autoHideDuration={2000}
-          onClose={handleCloseSaveSnackbar}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <Alert severity="success" onClose={handleCloseSaveSnackbar}>
-            บันทึกรูปภาพแล้ว
-          </Alert>
-        </Snackbar>
-      )}
+
+      <CustomSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Stack>
   );
 }
+
+export const Route = createFileRoute("/harngunna")({
+  component: RouteComponent,
+  validateSearch: (search) => {
+    if (typeof search.groupId !== "string") {
+      throw new Error("Missing or invalid groupId in search params");
+    }
+    return {
+      groupId: search.groupId,
+    };
+  },
+});

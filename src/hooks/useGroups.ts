@@ -52,11 +52,10 @@ export function useGroups() {
   const updateCurrentGroup = (updateFn: (group: Group) => Group) => {
     setAppData((prev) => {
       const currentGroup = prev.groups[prev.activeGroupId];
-      if (!currentGroup) return prev; // กรณี activeGroupId ไม่ถูกต้อง
+      if (!currentGroup) return prev;
 
       const updatedGroup = updateFn(currentGroup);
 
-      // ตรวจสอบว่า id ยังอยู่
       if (!updatedGroup.id) {
         updatedGroup.id = prev.activeGroupId;
       }

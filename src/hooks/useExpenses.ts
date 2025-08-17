@@ -11,13 +11,19 @@ interface Payment {
   amount: number;
 }
 
+// Updated to support custom sharing amounts per person
+export interface SharedAmount {
+  personId: string;
+  amount: number;
+}
+
 export interface Expense {
   id: string;
   name: string;
   totalAmount: number;
   date: string;
   payments: Payment[];
-  sharedWith: string[];
+  sharedWith: SharedAmount[]; // Changed from string[] to SharedAmount[]
 }
 
 interface Transaction {
@@ -39,16 +45,13 @@ export function useExpenses() {
   const people = currentGroup?.people || [];
   const expenses = currentGroup?.expenses || [];
 
-  // const [expenses, setExpenses] = useLocalStorage<Expense[]>("expenses", []);
-  // const [people, setPeople] = useLocalStorage<Person[]>("people", []);
-
   const addPerson = (name: string) => {
     const newPerson = {
       id: crypto.randomUUID(),
       name,
       color: generatePastelColor(),
     };
-    // setPeople((prev) => [...prev, newPerson]);
+
     updateCurrentGroup((group) => ({
       ...group,
       people: [...group.people, newPerson],
@@ -56,7 +59,6 @@ export function useExpenses() {
   };
 
   const deletePerson = (id: string) => {
-    // setPeople((prev) => prev.filter((person) => person.id !== id));
     updateCurrentGroup((group) => ({
       ...group,
       people: group.people.filter((person) => person.id !== id),
@@ -68,7 +70,7 @@ export function useExpenses() {
       ...expense,
       id: crypto.randomUUID(),
     };
-    // setExpenses((prev) => [...prev, newExpense]);
+
     updateCurrentGroup((group) => ({
       ...group,
       expenses: [...group.expenses, newExpense],
@@ -89,11 +91,6 @@ export function useExpenses() {
   };
 
   const editExpense = (id: string, updatedExpense: Omit<Expense, "id">) => {
-    // setExpenses((prev) =>
-    //   prev.map((expense) =>
-    //     expense.id === id ? { ...updatedExpense, id } : expense
-    //   )
-    // );
     updateCurrentGroup((group) => ({
       ...group,
       expenses: group.expenses.map((expense) =>
@@ -117,10 +114,9 @@ export function useExpenses() {
         balances[payment.payerId] += payment.amount;
       });
 
-      // Subtract from shared people's balances
-      const shareAmount = expense.totalAmount / expense.sharedWith.length;
-      expense.sharedWith.forEach((personId) => {
-        balances[personId] -= shareAmount;
+      // Subtract from shared people's balances based on their specific amounts
+      expense.sharedWith.forEach((sharedAmount) => {
+        balances[sharedAmount.personId] -= sharedAmount.amount;
       });
     });
 
@@ -167,7 +163,6 @@ export function useExpenses() {
   };
 
   const clearPeopleData = () => {
-    // setPeople([]);
     updateCurrentGroup((group) => ({
       ...group,
       people: [],
