@@ -25,7 +25,7 @@ export const Route = createFileRoute("/")({
 
 function Homepage() {
   const navigate = useNavigate();
-  const { groups, createGroup, setActiveGroup } = useGroups();
+  const { groups, createGroup, setActiveGroup, deleteGroup } = useGroups();
   const [newGroupName, setNewGroupName] = useState("");
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [search, setSearch] = useState("");
@@ -172,6 +172,9 @@ function Homepage() {
                 py: 1,
                 cursor: "pointer",
                 bgcolor: group.color,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
               }}
               onClick={() => {
                 setActiveGroup(group.id);
@@ -179,6 +182,18 @@ function Homepage() {
               }}
             >
               <Typography fontWeight={500}>{group.name}</Typography>
+              <Box
+                sx={{
+                  cursor: "pointer",
+                  color: "error.main",
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteGroup(group.id);
+                }}
+              >
+                ลบ
+              </Box>
             </Paper>
           ))}
       </Box>
